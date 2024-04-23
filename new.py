@@ -6,7 +6,7 @@ import pandas as pd
 from emoji import emojize
 
 # Assign the API key
-api_key = 'YOUR_GOOGLE_API_KEY_HERE'
+api_key = 'AIzaSyCDIyaoZmxIFt0igAhQDB-FUk6HWc9vrHU'
 
 # Configure Genai Key
 genai.configure(api_key=api_key)
