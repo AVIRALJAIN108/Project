@@ -130,7 +130,9 @@ def insert_data_into_table(table_name, data, db):
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     try:
-        cursor.execute(f"INSERT INTO {table_name} VALUES {data}")
+        # Construct a parameterized query
+        query = f"INSERT INTO {table_name} VALUES ({', '.join(['?'] * len(data))})"
+        cursor.execute(query, data)
         conn.commit()
         st.success("Data inserted successfully!")
     except Exception as e:
