@@ -6,7 +6,7 @@ import pandas as pd
 from emoji import emojize
 
 # Assign the API key
-api_key = 'AIzaSyCDIyaoZmxIFt0igAhQDB-FUk6HWc9vrHU'
+api_key = 'YOUR_GOOGLE_API_KEY_HERE'
 
 # Configure Genai Key
 genai.configure(api_key=api_key)
@@ -237,6 +237,19 @@ def delete_table(table_name, db, password):
         st.error("Incorrect password! Access denied.")
         st.write(emojize(":lock: Oops! Incorrect password. Access denied."))
 
+# Function to upload a database file
+def upload_database(db_file):
+    try:
+        with open(db_file, 'rb') as f:
+            file_content = f.read()
+        with open('uploaded_database.db', 'wb') as f:
+            f.write(file_content)
+        st.success(emojize("Database uploaded successfully! :arrow_up:"))
+        st.write(emojize(":rocket: Woohoo! Database has been successfully uploaded."))
+    except Exception as e:
+        st.error(f"Error uploading database: {str(e)}")
+        st.write(emojize(":warning: Oops! Something went wrong while uploading the database."))
+
 # Streamlit App
 st.set_page_config(page_title="Gemini App To Retrieve SQL Data", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
 st.title("Gemini SQL Assistant 🌟: Simplifying Data Retrieval")
@@ -387,6 +400,17 @@ if password == "AviralJain@12":
                         delete_table(table_to_delete, database_name, password_delete_table)
                         st.experimental_rerun()
                         st.sidebar.success("Table deletion completed!")
+
+            # Option to upload a database
+            upload_database_option = st.sidebar.checkbox("Upload Database", key="upload_database")
+
+            if upload_database_option:
+                uploaded_db_file = st.sidebar.file_uploader("Upload Database File (.db)", key="uploaded_db_file")
+                if uploaded_db_file is not None:
+                    if st.sidebar.button("Upload Database", key="upload_db_btn"):
+                        upload_database(uploaded_db_file)
+                        st.experimental_rerun()
+                        st.sidebar.success("Database upload completed!")
 
             # Close database connection
             conn.close()
