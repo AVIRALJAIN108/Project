@@ -142,18 +142,21 @@ def insert_data_into_table(table_name, data, db):
         conn.close()
 
 # Function to delete data from a table based on the value in the first column
-def delete_data_from_table(table_name, column_name, value, db):
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
-    try:
-        cursor.execute(f"DELETE FROM {table_name} WHERE {column_name}=?", (value,))
-        conn.commit()
-        st.success("Data deleted successfully!")
-    except Exception as e:
-        conn.rollback()
-        st.error(f"Error deleting data: {str(e)}")
-    finally:
-        conn.close()
+def delete_data_from_table(table_name, column_name, value, db, password):
+    if password == "AviralJain@12":
+        conn = sqlite3.connect(db)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f"DELETE FROM {table_name} WHERE {column_name}=?", (value,))
+            conn.commit()
+            st.success("Data deleted successfully!")
+        except Exception as e:
+            conn.rollback()
+            st.error(f"Error deleting data: {str(e)}")
+        finally:
+            conn.close()
+    else:
+        st.error("Incorrect password! Access denied.")
 
 # Function to create a new database
 def create_database(database_name):
@@ -187,26 +190,32 @@ def upload_csv_to_table(table_name, csv_file, db):
         st.error(f"Error uploading data: {str(e)}")
 
 # Function to delete a database
-def delete_database(database_name):
-    try:
-        os.remove(database_name)
-        st.success("Database deleted successfully!")
-    except Exception as e:
-        st.error(f"Error deleting database: {str(e)}")
+def delete_database(database_name, password):
+    if password == "AviralJain@12":
+        try:
+            os.remove(database_name)
+            st.success("Database deleted successfully!")
+        except Exception as e:
+            st.error(f"Error deleting database: {str(e)}")
+    else:
+        st.error("Incorrect password! Access denied.")
 
 # Function to delete a table
-def delete_table(table_name, db):
-    conn = sqlite3.connect(db)
-    cursor = conn.cursor()
-    try:
-        cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
-        conn.commit()
-        st.success("Table deleted successfully!")
-    except Exception as e:
-        conn.rollback()
-        st.error(f"Error deleting table: {str(e)}")
-    finally:
-        conn.close()
+def delete_table(table_name, db, password):
+    if password == "AviralJain@12":
+        conn = sqlite3.connect(db)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+            conn.commit()
+            st.success("Table deleted successfully!")
+        except Exception as e:
+            conn.rollback()
+            st.error(f"Error deleting table: {str(e)}")
+        finally:
+            conn.close()
+    else:
+        st.error("Incorrect password! Access denied.")
 
 # Streamlit App
 st.set_page_config(page_title="Gemini App To Retrieve SQL Data", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
@@ -220,6 +229,7 @@ create_database_option = st.sidebar.checkbox("Create New Database", key="create_
 
 if create_database_option:
     database_name = st.sidebar.text_input("Enter Database Name:", key="db_name_input_create_db")
+    password_create_db = st.sidebar.text_input("Enter Password:", type="password", key="password_create_db")
     if st.sidebar.button("Create Database", key="create_db_btn"):
         create_database(database_name)
 
@@ -230,126 +240,131 @@ database_name = st.sidebar.selectbox("Select Database", [''] + database_list, ke
 # Connect to SQLite database
 if database_name:
     if database_name != '':
-        conn = sqlite3.connect(database_name)
+        password_select_db = st.sidebar.text_input("Enter Password:", type="password", key="password_select_db")
+        if password_select_db == "AviralJain@12":
+            conn = sqlite3.connect(database_name)
 
-        # Fetch list of tables
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-        tables = [table[0] for table in cursor.fetchall()]
+            # Fetch list of tables
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = [table[0] for table in cursor.fetchall()]
 
-        # Checkbox to show sample database
-        show_sample_db = st.sidebar.checkbox("Show Sample Database", key="show_sample_db")
+            # Checkbox to show sample database
+            show_sample_db = st.sidebar.checkbox("Show Sample Database", key="show_sample_db")
 
-        if show_sample_db:
-            # Display sample data for tables
-            table_clicked = st.sidebar.selectbox("Select Table", tables, key="table_clicked_show_sample_db")
+            if show_sample_db:
+                # Display sample data for tables
+                table_clicked = st.sidebar.selectbox("Select Table", tables, key="table_clicked_show_sample_db")
 
-            if table_clicked:
-                display_sample_data(table_clicked, conn)
+                if table_clicked:
+                    display_sample_data(table_clicked, conn)
 
-        # Heading for asking a question
-        st.sidebar.header("Ask a Question")
+            # Heading for asking a question
+            st.sidebar.header("Ask a Question")
 
-        # Input field and button to ask the question
-        question = st.sidebar.text_input("Input: ", key="input_ask_question")
-        # Increase width of input
-        st.sidebar.markdown('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
+            # Input field and button to ask the question
+            question = st.sidebar.text_input("Input: ", key="input_ask_question")
+            # Increase width of input
+            st.sidebar.markdown('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
 
-        submit = st.sidebar.button("Ask the question", key="ask_question_btn")
+            submit = st.sidebar.button("Ask the question", key="ask_question_btn")
 
-        # if submit is clicked
-        if submit:
-            response = get_gemini_response(question, prompt)
-            st.subheader("Generated SQL Query:")
-            st.code(response, language='sql')  # Remove the 'key' parameter
-            print("Generated SQL Query:", response)  # Debugging print
+            # if submit is clicked
+            if submit:
+                response = get_gemini_response(question, prompt)
+                st.subheader("Generated SQL Query:")
+                st.code(response, language='sql')  # Remove the 'key' parameter
+                print("Generated SQL Query:", response)  # Debugging print
 
-            try:
-                result_df = read_sql_query(response, database_name)
-                st.subheader("Database Query Response:")
-                # Display DataFrame with wider format
-                st.dataframe(result_df, width=None)
-            except Exception as e:
-                st.error(f"Error executing SQL query: {str(e)}")
+                try:
+                    result_df = read_sql_query(response, database_name)
+                    st.subheader("Database Query Response:")
+                    # Display DataFrame with wider format
+                    st.dataframe(result_df, width=None)
+                except Exception as e:
+                    st.error(f"Error executing SQL query: {str(e)}")
 
-        # Option to create a new table
-        create_table_option = st.sidebar.checkbox("Create New Table", key="create_table")
+            # Option to create a new table
+            create_table_option = st.sidebar.checkbox("Create New Table", key="create_table")
 
-        if create_table_option:
-            table_name = st.sidebar.text_input("Enter Table Name:", key="table_name_input")
-            num_columns = st.sidebar.number_input("Enter Number of Columns:", min_value=1, value=1, key="num_columns_input")
-            columns = {}
-            for i in range(num_columns):
-                col_name = st.sidebar.text_input("Enter Column Name:", key=f"col_name_{i}")
-                col_type = st.sidebar.selectbox("Select Column Type:", ["TEXT", "INTEGER", "REAL", "BLOB"], key=f"col_type_{i}")
-                columns[col_name] = col_type
-            if st.sidebar.button("Create Table", key="create_table_btn"):
-                create_table(table_name, columns, database_name)
+            if create_table_option:
+                table_name = st.sidebar.text_input("Enter Table Name:", key="table_name_input")
+                num_columns = st.sidebar.number_input("Enter Number of Columns:", min_value=1, value=1, key="num_columns_input")
+                columns = {}
+                for i in range(num_columns):
+                    col_name = st.sidebar.text_input("Enter Column Name:", key=f"col_name_{i}")
+                    col_type = st.sidebar.selectbox("Select Column Type:", ["TEXT", "INTEGER", "REAL", "BLOB"], key=f"col_type_{i}")
+                    columns[col_name] = col_type
+                if st.sidebar.button("Create Table", key="create_table_btn"):
+                    create_table(table_name, columns, database_name)
 
-        # Option to upload data from a CSV file
-        upload_csv_option = st.sidebar.checkbox("Upload Data from CSV", key="upload_csv")
+            # Option to upload data from a CSV file
+            upload_csv_option = st.sidebar.checkbox("Upload Data from CSV", key="upload_csv")
 
-        if upload_csv_option:
-            table_to_upload = st.sidebar.text_input("Enter Table Name for Uploaded Data:", key="upload_table_input")
-            csv_file = st.sidebar.file_uploader("Upload CSV File", key="upload_csv_file")
-            if csv_file is not None:
-                if st.sidebar.button("Upload Data", key="upload_data_btn"):
-                    upload_csv_to_table(table_to_upload, csv_file, database_name)
+            if upload_csv_option:
+                table_to_upload = st.sidebar.text_input("Enter Table Name for Uploaded Data:", key="upload_table_input")
+                csv_file = st.sidebar.file_uploader("Upload CSV File", key="upload_csv_file")
+                if csv_file is not None:
+                    if st.sidebar.button("Upload Data", key="upload_data_btn"):
+                        upload_csv_to_table(table_to_upload, csv_file, database_name)
 
-        # Option to insert data into a table
-        insert_option = st.sidebar.checkbox("Insert Data into Table", key="insert_data")
+            # Option to insert data into a table
+            insert_option = st.sidebar.checkbox("Insert Data into Table", key="insert_data")
 
-        if insert_option:
-            table_to_insert = st.sidebar.selectbox("Select Table to Insert Data", tables, key="select_insert_table_insert_data")
-            if table_to_insert:
-                st.sidebar.subheader(f"Insert Data into Table: {table_to_insert}")
-                cursor = conn.cursor()
-                cursor.execute(f"PRAGMA table_info({table_to_insert})")
-                columns = [column[1] for column in cursor.fetchall()]
-                data_to_insert = {}
-                for column in columns:
-                    data_to_insert[column] = st.sidebar.text_input(f"Enter value for {column}:", key=f"insert_data_{column}_insert_data")
-                if st.sidebar.button("Insert Data", key="insert_data_btn"):
-                    data_tuple = tuple([data_to_insert[column] for column in columns])
-                    insert_data_into_table(table_to_insert, data_tuple, database_name)
-                    st.sidebar.success("Insertion completed!")
+            if insert_option:
+                table_to_insert = st.sidebar.selectbox("Select Table to Insert Data", tables, key="select_insert_table_insert_data")
+                if table_to_insert:
+                    st.sidebar.subheader(f"Insert Data into Table: {table_to_insert}")
+                    cursor = conn.cursor()
+                    cursor.execute(f"PRAGMA table_info({table_to_insert})")
+                    columns = [column[1] for column in cursor.fetchall()]
+                    data_to_insert = {}
+                    for column in columns:
+                        data_to_insert[column] = st.sidebar.text_input(f"Enter value for {column}:", key=f"insert_data_{column}_insert_data")
+                    if st.sidebar.button("Insert Data", key="insert_data_btn"):
+                        data_tuple = tuple([data_to_insert[column] for column in columns])
+                        insert_data_into_table(table_to_insert, data_tuple, database_name)
+                        st.sidebar.success("Insertion completed!")
 
-        # Option to delete data from a table
-        delete_option = st.sidebar.checkbox("Delete Data from Table", key="delete_data")
+            # Option to delete data from a table
+            delete_option = st.sidebar.checkbox("Delete Data from Table", key="delete_data")
 
-        if delete_option:
-            table_to_delete = st.sidebar.selectbox("Select Table to Delete Data", tables, key="select_delete_table_delete_data")
-            if table_to_delete:
-                st.sidebar.subheader(f"Delete Data from Table: {table_to_delete}")
-                cursor = conn.cursor()
-                cursor.execute(f"PRAGMA table_info({table_to_delete})")
-                columns = [column[1] for column in cursor.fetchall()]
-                column_to_delete = columns[0]  # Assuming the first column is used for deletion
-                value_to_delete = st.sidebar.text_input(f"Enter value in {column_to_delete} to delete:", key="delete_value_delete_data")
-                if st.sidebar.button("Delete Data", key="delete_data_btn_delete_data"):
-                    delete_data_from_table(table_to_delete, column_to_delete, value_to_delete, database_name)
-                    st.sidebar.success("Deletion completed!")
+            if delete_option:
+                table_to_delete = st.sidebar.selectbox("Select Table to Delete Data", tables, key="select_delete_table_delete_data")
+                if table_to_delete:
+                    st.sidebar.subheader(f"Delete Data from Table: {table_to_delete}")
+                    cursor = conn.cursor()
+                    cursor.execute(f"PRAGMA table_info({table_to_delete})")
+                    columns = [column[1] for column in cursor.fetchall()]
+                    column_to_delete = columns[0]  # Assuming the first column is used for deletion
+                    value_to_delete = st.sidebar.text_input(f"Enter value in {column_to_delete} to delete:", key="delete_value_delete_data")
+                    password_delete_data = st.sidebar.text_input("Enter Password:", type="password", key="password_delete_data")
+                    if st.sidebar.button("Delete Data", key="delete_data_btn_delete_data"):
+                        delete_data_from_table(table_to_delete, column_to_delete, value_to_delete, database_name, password_delete_data)
 
-        # Option to delete the database
-        delete_database_option = st.sidebar.checkbox("Delete Database", key="delete_db")
+            # Option to delete the database
+            delete_database_option = st.sidebar.checkbox("Delete Database", key="delete_db")
 
-        if delete_database_option:
-            if st.sidebar.button("Delete Database", key="delete_db_btn"):
-                conn.close()  # Close the connection before attempting to delete the file
-                delete_database(database_name)
-                st.experimental_rerun()
-                st.sidebar.success("Database deletion completed!")
-
-        # Option to delete a table
-        delete_table_option = st.sidebar.checkbox("Delete Table", key="delete_table")
-
-        if delete_table_option:
-            table_to_delete = st.sidebar.selectbox("Select Table to Delete", tables, key="select_delete_table_delete_table")
-            if table_to_delete:
-                if st.sidebar.button("Delete Table", key="delete_table_btn_delete_table"):
-                    delete_table(table_to_delete, database_name)
+            if delete_database_option:
+                password_delete_db = st.sidebar.text_input("Enter Password:", type="password", key="password_delete_db")
+                if st.sidebar.button("Delete Database", key="delete_db_btn"):
+                    delete_database(database_name, password_delete_db)
                     st.experimental_rerun()
-                    st.sidebar.success("Table deletion completed!")
+                    st.sidebar.success("Database deletion completed!")
 
-        # Close database connection
-        conn.close()
+            # Option to delete a table
+            delete_table_option = st.sidebar.checkbox("Delete Table", key="delete_table")
+
+            if delete_table_option:
+                table_to_delete = st.sidebar.selectbox("Select Table to Delete", tables, key="select_delete_table_delete_table")
+                if table_to_delete:
+                    password_delete_table = st.sidebar.text_input("Enter Password:", type="password", key="password_delete_table")
+                    if st.sidebar.button("Delete Table", key="delete_table_btn_delete_table"):
+                        delete_table(table_to_delete, database_name, password_delete_table)
+                        st.experimental_rerun()
+                        st.sidebar.success("Table deletion completed!")
+
+            # Close database connection
+            conn.close()
+        else:
+            st.error("Incorrect password! Access denied.")
