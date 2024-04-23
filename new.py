@@ -157,13 +157,16 @@ def delete_data_from_table(table_name, column_name, value, db):
 def create_database(database_name):
     conn = sqlite3.connect(database_name)
     conn.close()
+    st.success("Database created successfully!")
 
 # Function to create a new table
-def create_table(table_name, columns, constraints, db):
+def create_table(table_name, columns, db):
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     try:
-        cursor.execute(f"CREATE TABLE {table_name} ({', '.join([f'{col} {col_type} {constraint}' for col, (col_type, constraint) in columns.items()])} {', '.join(constraints)} )")
+        # Constructing the CREATE TABLE statement
+        columns_str = ', '.join([f'{col} {col_type}' for col, col_type in columns.items()])
+        cursor.execute(f"CREATE TABLE {table_name} ({columns_str})")
         conn.commit()
         st.success("Table created successfully!")
     except Exception as e:
@@ -205,7 +208,7 @@ def delete_table(table_name, db):
 
 # Streamlit App
 st.set_page_config(page_title="Gemini App To Retrieve SQL Data", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
-st.title("Gemini SQL Assistant 🌟: Simplifying  Data Retrieval")
+st.title("Gemini SQL Assistant 🌟: Simplifying Data Retrieval")
 
 # Default content in the middle section
 st.write("Welcome to Gemini SQL Assistant! Use the sidebar on the left to interact with the app.")
@@ -214,7 +217,7 @@ st.write("Welcome to Gemini SQL Assistant! Use the sidebar on the left to intera
 create_database_option = st.sidebar.checkbox("Create New Database", key="create_db")
 
 if create_database_option:
-    database_name = st.sidebar.text_input("Enter Database Name:", key="db_name_input")
+    database_name = st.sidebar.text_input("Enter Database Name:", key="db_name_input_create_db")
     if st.sidebar.button("Create Database", key="create_db_btn"):
         create_database(database_name)
 
@@ -237,7 +240,7 @@ if database_name:
 
         if show_sample_db:
             # Display sample data for tables
-            table_clicked = st.sidebar.selectbox("Select Table", tables, key="table_clicked")
+            table_clicked = st.sidebar.selectbox("Select Table", tables, key="table_clicked_show_sample_db")
 
             if table_clicked:
                 display_sample_data(table_clicked, conn)
@@ -246,7 +249,7 @@ if database_name:
         st.sidebar.header("Ask a Question")
 
         # Input field and button to ask the question
-        question = st.sidebar.text_input("Input: ", key="input")
+        question = st.sidebar.text_input("Input: ", key="input_ask_question")
         # Increase width of input
         st.sidebar.markdown('<style>div.row-widget.stRadio > div{flex-direction:row;}</style>', unsafe_allow_html=True)
 
@@ -277,11 +280,9 @@ if database_name:
             for i in range(num_columns):
                 col_name = st.sidebar.text_input("Enter Column Name:", key=f"col_name_{i}")
                 col_type = st.sidebar.selectbox("Select Column Type:", ["TEXT", "INTEGER", "REAL", "BLOB"], key=f"col_type_{i}")
-                constraint = st.sidebar.selectbox("Select Constraint:", ["PRIMARY KEY", "NOT NULL", "UNIQUE", "DEFAULT"], key=f"constraint_{i}")
-                columns[col_name] = (col_type, constraint)
-            constraints = [f'{col_name} {constraint}' for col_name, (_, constraint) in columns.items() if constraint != "DEFAULT"]
+                columns[col_name] = col_type
             if st.sidebar.button("Create Table", key="create_table_btn"):
-                create_table(table_name, columns, constraints, database_name)
+                create_table(table_name, columns, database_name)
 
         # Option to upload data from a CSV file
         upload_csv_option = st.sidebar.checkbox("Upload Data from CSV", key="upload_csv")
@@ -297,7 +298,7 @@ if database_name:
         insert_option = st.sidebar.checkbox("Insert Data into Table", key="insert_data")
 
         if insert_option:
-            table_to_insert = st.sidebar.selectbox("Select Table to Insert Data", tables, key="select_insert_table")
+            table_to_insert = st.sidebar.selectbox("Select Table to Insert Data", tables, key="select_insert_table_insert_data")
             if table_to_insert:
                 st.sidebar.subheader(f"Insert Data into Table: {table_to_insert}")
                 cursor = conn.cursor()
@@ -305,7 +306,7 @@ if database_name:
                 columns = [column[1] for column in cursor.fetchall()]
                 data_to_insert = {}
                 for column in columns:
-                    data_to_insert[column] = st.sidebar.text_input(f"Enter value for {column}:", key=f"insert_data_{column}")
+                    data_to_insert[column] = st.sidebar.text_input(f"Enter value for {column}:", key=f"insert_data_{column}_insert_data")
                 if st.sidebar.button("Insert Data", key="insert_data_btn"):
                     data_tuple = tuple([data_to_insert[column] for column in columns])
                     insert_data_into_table(table_to_insert, data_tuple, database_name)
@@ -315,16 +316,17 @@ if database_name:
         delete_option = st.sidebar.checkbox("Delete Data from Table", key="delete_data")
 
         if delete_option:
-            table_to_delete = st.sidebar.selectbox("Select Table to Delete Data", tables, key="select_delete_table")
+            table_to_delete = st.sidebar.selectbox("Select Table to Delete Data", tables, key="select_delete_table_delete_data")
             if table_to_delete:
                 st.sidebar.subheader(f"Delete Data from Table: {table_to_delete}")
                 cursor = conn.cursor()
                 cursor.execute(f"PRAGMA table_info({table_to_delete})")
                 columns = [column[1] for column in cursor.fetchall()]
                 column_to_delete = columns[0]  # Assuming the first column is used for deletion
-                value_to_delete = st.sidebar.text_input(f"Enter value in {column_to_delete} to delete:", key="delete_value")
-                if st.sidebar.button("Delete Data", key="delete_data_btn"):
+                value_to_delete = st.sidebar.text_input(f"Enter value in {column_to_delete} to delete:", key="delete_value_delete_data")
+                if st.sidebar.button("Delete Data", key="delete_data_btn_delete_data"):
                     delete_data_from_table(table_to_delete, column_to_delete, value_to_delete, database_name)
+                    st.sidebar.success("Deletion completed!")
 
         # Option to delete the database
         delete_database_option = st.sidebar.checkbox("Delete Database", key="delete_db")
@@ -334,16 +336,18 @@ if database_name:
                 conn.close()  # Close the connection before attempting to delete the file
                 delete_database(database_name)
                 st.experimental_rerun()
+                st.sidebar.success("Database deletion completed!")
 
         # Option to delete a table
         delete_table_option = st.sidebar.checkbox("Delete Table", key="delete_table")
 
         if delete_table_option:
-            table_to_delete = st.sidebar.selectbox("Select Table to Delete", tables, key="select_delete_table")
+            table_to_delete = st.sidebar.selectbox("Select Table to Delete", tables, key="select_delete_table_delete_table")
             if table_to_delete:
-                if st.sidebar.button("Delete Table", key="delete_table_btn"):
+                if st.sidebar.button("Delete Table", key="delete_table_btn_delete_table"):
                     delete_table(table_to_delete, database_name)
                     st.experimental_rerun()
+                    st.sidebar.success("Table deletion completed!")
 
         # Close database connection
         conn.close()
