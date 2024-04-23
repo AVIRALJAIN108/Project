@@ -3,9 +3,10 @@ import streamlit as st
 import sqlite3
 import google.generativeai as genai
 import pandas as pd
+from emoji import emojize
 
 # Assign the API key
-api_key = 'AIzaSyCDIyaoZmxIFt0igAhQDB-FUk6HWc9vrHU'
+api_key = 'YOUR_GOOGLE_API_KEY_HERE'
 
 # Configure Genai Key
 genai.configure(api_key=api_key)
@@ -134,14 +135,14 @@ def insert_data_into_table(table_name, data, db):
         query = f"INSERT INTO {table_name} VALUES ({', '.join(['?'] * len(data))})"
         cursor.execute(query, data)
         conn.commit()
-        st.success("Data inserted successfully!")
+        st.success(emojize("Data inserted successfully! :thumbs_up:"))
+        st.write(emojize(":rocket: Woohoo! Data has been successfully inserted."))
     except Exception as e:
         conn.rollback()
         st.error(f"Error inserting data: {str(e)}")
-    finally:
-        conn.close()
+        st.write(emojize(":warning: Oops! Something went wrong while inserting data."))
 
-# Function to delete data from a table based on the value in the first column
+# Function to delete data from a table
 def delete_data_from_table(table_name, column_name, value, db, password):
     if password == "AviralJain@12":
         conn = sqlite3.connect(db)
@@ -149,20 +150,24 @@ def delete_data_from_table(table_name, column_name, value, db, password):
         try:
             cursor.execute(f"DELETE FROM {table_name} WHERE {column_name}=?", (value,))
             conn.commit()
-            st.success("Data deleted successfully!")
+            st.success(emojize("Data deleted successfully! :wastebasket:"))
+            st.write(emojize(":raised_hands: Hooray! Data has been successfully deleted."))
         except Exception as e:
             conn.rollback()
             st.error(f"Error deleting data: {str(e)}")
+            st.write(emojize(":x: Oops! Something went wrong while deleting data."))
         finally:
             conn.close()
     else:
         st.error("Incorrect password! Access denied.")
+        st.write(emojize(":lock: Oops! Incorrect password. Access denied."))
 
 # Function to create a new database
 def create_database(database_name):
     conn = sqlite3.connect(database_name)
     conn.close()
-    st.success("Database created successfully!")
+    st.success(emojize("Database created successfully! :floppy_disk:"))
+    st.write(emojize(":tada: Yay! Database has been successfully created."))
 
 # Function to create a new table
 def create_table(table_name, columns, db):
@@ -173,10 +178,12 @@ def create_table(table_name, columns, db):
         columns_str = ', '.join([f'{col} {col_type}' for col, col_type in columns.items()])
         cursor.execute(f"CREATE TABLE {table_name} ({columns_str})")
         conn.commit()
-        st.success("Table created successfully!")
+        st.success(emojize("Table created successfully! :white_check_mark:"))
+        st.write(emojize(":partying_face: Hurray! Table has been successfully created."))
     except Exception as e:
         conn.rollback()
         st.error(f"Error creating table: {str(e)}")
+        st.write(emojize(":warning: Oops! Something went wrong while creating the table."))
     finally:
         conn.close()
 
@@ -185,20 +192,30 @@ def upload_csv_to_table(table_name, csv_file, db):
     try:
         df = pd.read_csv(csv_file)
         df.to_sql(table_name, sqlite3.connect(db), if_exists='append', index=False)
-        st.success("Data uploaded successfully!")
+        st.success(emojize("Data uploaded successfully! :arrow_up:"))
+        st.write(emojize(":rocket: Woohoo! Data has been successfully uploaded."))
     except Exception as e:
         st.error(f"Error uploading data: {str(e)}")
+        st.write(emojize(":warning: Oops! Something went wrong while uploading data."))
 
 # Function to delete a database
 def delete_database(database_name, password):
     if password == "AviralJain@12":
         try:
+            print("Attempting to delete database...")
+            conn.close()  # Close the database connection
+            print("Password matched. Deleting database...")
             os.remove(database_name)
-            st.success("Database deleted successfully!")
+            st.success(emojize("Database deleted successfully! :wastebasket:"))
+            st.write(emojize(":raised_hands: Hooray! Database has been successfully deleted."))
         except Exception as e:
+            print("Error occurred while deleting database:", e)
             st.error(f"Error deleting database: {str(e)}")
+            st.write(emojize(":x: Oops! Something went wrong while deleting the database."))
     else:
+        print("Incorrect password! Access denied.")
         st.error("Incorrect password! Access denied.")
+        st.write(emojize(":lock: Oops! Incorrect password. Access denied."))
 
 # Function to delete a table
 def delete_table(table_name, db, password):
@@ -208,40 +225,48 @@ def delete_table(table_name, db, password):
         try:
             cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
             conn.commit()
-            st.success("Table deleted successfully!")
+            st.success(emojize("Table deleted successfully! :wastebasket:"))
+            st.write(emojize(":raised_hands: Hooray! Table has been successfully deleted."))
         except Exception as e:
             conn.rollback()
             st.error(f"Error deleting table: {str(e)}")
+            st.write(emojize(":x: Oops! Something went wrong while deleting the table."))
         finally:
             conn.close()
     else:
         st.error("Incorrect password! Access denied.")
+        st.write(emojize(":lock: Oops! Incorrect password. Access denied."))
 
 # Streamlit App
 st.set_page_config(page_title="Gemini App To Retrieve SQL Data", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
 st.title("Gemini SQL Assistant 🌟: Simplifying Data Retrieval")
 
-# Default content in the middle section
-st.write("Welcome to Gemini SQL Assistant! Use the sidebar on the left to interact with the app.")
+# Login Section
+password = st.sidebar.text_input("Password:", type="password", key="login_password")
 
-# Option to create a new database
-create_database_option = st.sidebar.checkbox("Create New Database", key="create_db")
+if password == "AviralJain@12":
+    st.sidebar.success("Login successful! Welcome to Gemini SQL Assistant.")
 
-if create_database_option:
-    database_name = st.sidebar.text_input("Enter Database Name:", key="db_name_input_create_db")
-    password_create_db = st.sidebar.text_input("Enter Password:", type="password", key="password_create_db")
-    if st.sidebar.button("Create Database", key="create_db_btn"):
-        create_database(database_name)
+    # Default content in the middle section
+    st.write("Welcome to Gemini SQL Assistant! Use the sidebar on the left to interact with the app.")
 
-# Option to select an existing database
-database_list = [filename for filename in os.listdir() if filename.endswith('.db')]
-database_name = st.sidebar.selectbox("Select Database", [''] + database_list, key="select_db") if database_list else None
+    # Option to create a new database
+    create_database_option = st.sidebar.checkbox("Create New Database", key="create_db")
 
-# Connect to SQLite database
-if database_name:
-    if database_name != '':
-        password_select_db = st.sidebar.text_input("Enter Password:", type="password", key="password_select_db")
-        if password_select_db == "AviralJain@12":
+    if create_database_option:
+        database_name = st.sidebar.text_input("Enter Database Name:", key="db_name_input_create_db")
+
+        if st.sidebar.button("Create Database", key="create_db_btn"):
+            create_database(database_name)
+
+    # Option to select an existing database
+    database_list = [filename for filename in os.listdir() if filename.endswith('.db')]
+    database_name = st.sidebar.selectbox("Select Database", [''] + database_list, key="select_db") if database_list else None
+
+    # Connect to SQLite database
+    if database_name:
+        if database_name != '':
+
             conn = sqlite3.connect(database_name)
 
             # Fetch list of tables
@@ -324,7 +349,6 @@ if database_name:
                     if st.sidebar.button("Insert Data", key="insert_data_btn"):
                         data_tuple = tuple([data_to_insert[column] for column in columns])
                         insert_data_into_table(table_to_insert, data_tuple, database_name)
-                        st.sidebar.success("Insertion completed!")
 
             # Option to delete data from a table
             delete_option = st.sidebar.checkbox("Delete Data from Table", key="delete_data")
@@ -366,5 +390,6 @@ if database_name:
 
             # Close database connection
             conn.close()
-        else:
-            st.error("Incorrect password! Access denied.")
+else:
+    st.sidebar.error("Incorrect password! Access denied.")
+    st.write(emojize(":lock: Oops! Incorrect password. Access denied."))
