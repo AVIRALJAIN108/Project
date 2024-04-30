@@ -251,8 +251,38 @@ def upload_database(db_file):
         st.write(emojize(":warning: Oops! Something went wrong while uploading the database."))
 
 # Streamlit App
+# Streamlit App
 st.set_page_config(page_title="Gemini App To Retrieve SQL Data", page_icon=":bar_chart:", layout="wide", initial_sidebar_state="collapsed")
 st.title("Gemini SQL Assistant 🌟: Simplifying Data Retrieval")
+
+# Introduction and Description
+st.markdown("""
+### Welcome to Gemini SQL Assistant!
+
+Gemini SQL Assistant is a powerful tool that simplifies data retrieval from SQLite databases. Whether you're an expert SQL user or a beginner, this app makes database operations easy and intuitive.
+
+#### Features:
+
+1. **Effortless Data Retrieval:** Quickly execute SQL queries to retrieve the information you need from your database.
+2. **Interactive Data Exploration:** Easily explore sample data from your tables to gain insights and understand the structure of your database.
+3. **Database Operations Made Easy:** Perform various database operations such as creating tables, uploading data, and inserting or deleting records with just a few clicks.
+4. **Natural Language Queries:** Use natural language to ask questions, and Gemini SQL Assistant will generate the corresponding SQL query for you, saving you time and effort.
+                        
+#### How to Use:
+
+1. **Create New Database:** Start fresh by creating a new SQLite database.
+2. **Select Database:** Choose an existing database to work with.
+3. **Database Operations:** Perform actions like creating tables, uploading data, inserting, and deleting data.
+4. **Execute SQL Queries:** Ask questions in natural language, and Gemini SQL Assistant will generate the corresponding SQL query for you!
+
+- **Visit My Portfolio:** Explore more of my projects and skills on [my portfolio](https://jain-aviral-portfolio.netlify.app/).
+- **Connect on LinkedIn:** Let's connect on [LinkedIn](https://www.linkedin.com/in/aviral-jain-b31647234) for professional networking and collaboration opportunities.
+            
+
+            
+
+Enjoy exploring your data with Gemini SQL Assistant! 🚀
+""")
 
 # Login Section
 password = st.sidebar.text_input("Password:", type="password", key="login_password")
